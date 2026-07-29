@@ -1,0 +1,2078 @@
+{
+  "datasets": [
+    {
+      "name": "population_overview",
+      "displayName": "Population Overview",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.stroke_prediction.stroke_clean",
+        "measures": [
+          {
+            "name": "total_patients",
+            "expr": "COUNT(*)"
+          },
+          {
+            "name": "stroke_cases",
+            "expr": "SUM(stroke)"
+          },
+          {
+            "name": "stroke_prevalence_pct",
+            "expr": "SUM(stroke) * 100.0 / COUNT(*)"
+          },
+          {
+            "name": "median_age",
+            "expr": "PERCENTILE(age, 0.5)"
+          },
+          {
+            "name": "missing_bmi_pct",
+            "expr": "COUNT_IF(bmi IS NULL) * 100.0 / COUNT(*)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "22e32205",
+      "displayName": "stroke_by_age_group",
+      "queryLines": [
+        "SELECT\r\n",
+        "    CASE\r\n",
+        "        WHEN age < 40 THEN '<40'\r\n",
+        "        WHEN age < 50 THEN '40–49'\r\n",
+        "        WHEN age < 60 THEN '50–59'\r\n",
+        "        WHEN age < 70 THEN '60–69'\r\n",
+        "        WHEN age < 80 THEN '70–79'\r\n",
+        "        ELSE '80+'\r\n",
+        "    END AS age_group,\r\n",
+        "\r\n",
+        "    CASE\r\n",
+        "        WHEN age < 40 THEN 1\r\n",
+        "        WHEN age < 50 THEN 2\r\n",
+        "        WHEN age < 60 THEN 3\r\n",
+        "        WHEN age < 70 THEN 4\r\n",
+        "        WHEN age < 80 THEN 5\r\n",
+        "        ELSE 6\r\n",
+        "    END AS age_group_order,\r\n",
+        "\r\n",
+        "    CASE\r\n",
+        "        WHEN stroke = 1 THEN 'Stroke'\r\n",
+        "        ELSE 'No stroke'\r\n",
+        "    END AS stroke,\r\n",
+        "\r\n",
+        "    COUNT(*) AS patient_count\r\n",
+        "\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "\r\n",
+        "GROUP BY\r\n",
+        "    age_group,\r\n",
+        "    age_group_order,\r\n",
+        "    stroke\r\n",
+        "\r\n",
+        "ORDER BY\r\n",
+        "    age_group_order,\r\n",
+        "    stroke"
+      ]
+    },
+    {
+      "name": "cbb96137",
+      "displayName": "stroke_prevalence_by_risk_factor",
+      "queryLines": [
+        "SELECT\r\n",
+        "    'Sex' AS risk_factor,\r\n",
+        "    gender AS category,\r\n",
+        "    COUNT(*) AS patient_count,\r\n",
+        "    SUM(stroke) AS stroke_count,\r\n",
+        "    100.0 * AVG(stroke) AS stroke_prevalence\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "GROUP BY gender\r\n",
+        "\r\n",
+        "UNION ALL\r\n",
+        "\r\n",
+        "SELECT\r\n",
+        "    'Hypertension' AS risk_factor,\r\n",
+        "    CASE\r\n",
+        "        WHEN hypertension = 1 THEN 'Yes'\r\n",
+        "        ELSE 'No'\r\n",
+        "    END AS category,\r\n",
+        "    COUNT(*) AS patient_count,\r\n",
+        "    SUM(stroke) AS stroke_count,\r\n",
+        "    100.0 * AVG(stroke) AS stroke_prevalence\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "GROUP BY hypertension\r\n",
+        "\r\n",
+        "UNION ALL\r\n",
+        "\r\n",
+        "SELECT\r\n",
+        "    'Heart disease' AS risk_factor,\r\n",
+        "    CASE\r\n",
+        "        WHEN heart_disease = 1 THEN 'Yes'\r\n",
+        "        ELSE 'No'\r\n",
+        "    END AS category,\r\n",
+        "    COUNT(*) AS patient_count,\r\n",
+        "    SUM(stroke) AS stroke_count,\r\n",
+        "    100.0 * AVG(stroke) AS stroke_prevalence\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "GROUP BY heart_disease"
+      ]
+    },
+    {
+      "name": "22fbe581",
+      "displayName": "bmi_distribution",
+      "queryLines": [
+        "SELECT\r\n",
+        "    bmi,\r\n",
+        "    CASE\r\n",
+        "        WHEN stroke = 1 THEN 'Stroke'\r\n",
+        "        ELSE 'No stroke'\r\n",
+        "    END AS stroke_status\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "WHERE bmi IS NOT NULL"
+      ]
+    },
+    {
+      "name": "a34179f5",
+      "displayName": "glucose_distribution",
+      "queryLines": [
+        "SELECT\r\n",
+        "    avg_glucose_level AS glucose,\r\n",
+        "    CASE\r\n",
+        "        WHEN stroke = 1 THEN 'Stroke'\r\n",
+        "        ELSE 'No stroke'\r\n",
+        "    END AS stroke_status\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "WHERE avg_glucose_level IS NOT NULL"
+      ]
+    },
+    {
+      "name": "fe1d2ecc",
+      "displayName": "smoking_profile",
+      "queryLines": [
+        "SELECT\r\n",
+        "    COALESCE(smoking_status, 'Missing') AS smoking_status,\r\n",
+        "    COUNT(*) AS patient_count,\r\n",
+        "    SUM(stroke) AS stroke_count,\r\n",
+        "    100.0 * AVG(stroke) AS stroke_prevalence\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "GROUP BY COALESCE(smoking_status, 'Missing')"
+      ]
+    },
+    {
+      "name": "b8ca8aba",
+      "displayName": "stroke_heatmap",
+      "queryLines": [
+        "SELECT\r\n",
+        "    CASE\r\n",
+        "        WHEN age < 40 THEN '<40'\r\n",
+        "        WHEN age < 50 THEN '40–49'\r\n",
+        "        WHEN age < 60 THEN '50–59'\r\n",
+        "        WHEN age < 70 THEN '60–69'\r\n",
+        "        WHEN age < 80 THEN '70–79'\r\n",
+        "        ELSE '80+'\r\n",
+        "    END AS age_group,\r\n",
+        "\r\n",
+        "    CASE\r\n",
+        "        WHEN age < 40 THEN 1\r\n",
+        "        WHEN age < 50 THEN 2\r\n",
+        "        WHEN age < 60 THEN 3\r\n",
+        "        WHEN age < 70 THEN 4\r\n",
+        "        WHEN age < 80 THEN 5\r\n",
+        "        ELSE 6\r\n",
+        "    END AS age_group_order,\r\n",
+        "\r\n",
+        "    CASE\r\n",
+        "        WHEN hypertension = 1 THEN 'Hypertension'\r\n",
+        "        ELSE 'No hypertension'\r\n",
+        "    END AS hypertension_status,\r\n",
+        "\r\n",
+        "    COUNT(*) AS patient_count,\r\n",
+        "    SUM(stroke) AS stroke_count,\r\n",
+        "    100.0 * AVG(stroke) AS stroke_prevalence\r\n",
+        "\r\n",
+        "FROM workspace.stroke_prediction.stroke_clean\r\n",
+        "\r\n",
+        "GROUP BY\r\n",
+        "    age_group,\r\n",
+        "    age_group_order,\r\n",
+        "    hypertension_status\r\n",
+        "\r\n",
+        "ORDER BY\r\n",
+        "    age_group_order,\r\n",
+        "    hypertension_status"
+      ]
+    },
+    {
+      "name": "age_hypertension_heatmap",
+      "displayName": "Age Group & Hypertension Stroke Rates",
+      "queryLines": [
+        "SELECT\n",
+        "  CASE\n",
+        "    WHEN age < 40 THEN '<40'\n",
+        "    WHEN age < 50 THEN '40–49'\n",
+        "    WHEN age < 60 THEN '50–59'\n",
+        "    WHEN age < 70 THEN '60–69'\n",
+        "    WHEN age < 80 THEN '70–79'\n",
+        "    ELSE '80+'\n",
+        "  END AS age_group,\n",
+        "  CASE\n",
+        "    WHEN age < 40 THEN 1\n",
+        "    WHEN age < 50 THEN 2\n",
+        "    WHEN age < 60 THEN 3\n",
+        "    WHEN age < 70 THEN 4\n",
+        "    WHEN age < 80 THEN 5\n",
+        "    ELSE 6\n",
+        "  END AS age_group_order,\n",
+        "  CASE\n",
+        "    WHEN hypertension = 1 THEN 'Hypertension'\n",
+        "    ELSE 'No hypertension'\n",
+        "  END AS hypertension_status,\n",
+        "  COUNT(*) AS patient_count,\n",
+        "  SUM(stroke) AS stroke_count,\n",
+        "  100.0 * AVG(stroke) AS stroke_prevalence\n",
+        "FROM\n",
+        "  workspace.stroke_prediction.stroke_clean\n",
+        "GROUP BY\n",
+        "  age_group,\n",
+        "  age_group_order,\n",
+        "  hypertension_status\n",
+        "ORDER BY\n",
+        "  age_group_order,\n",
+        "  hypertension_status"
+      ]
+    }
+  ],
+  "relationshipGraphs": [
+    {
+      "sources": [
+        {
+          "name": "Population_Overview",
+          "datasetName": "population_overview"
+        },
+        {
+          "name": "Untitled_dataset",
+          "datasetName": "22e32205"
+        },
+        {
+          "name": "Untitled_dataset_1",
+          "datasetName": "cbb96137"
+        },
+        {
+          "name": "Untitled_dataset_2",
+          "datasetName": "22fbe581"
+        },
+        {
+          "name": "Untitled_dataset_3",
+          "datasetName": "a34179f5"
+        },
+        {
+          "name": "Untitled_dataset_4",
+          "datasetName": "fe1d2ecc"
+        },
+        {
+          "name": "Untitled_dataset_5",
+          "datasetName": "b8ca8aba"
+        },
+        {
+          "name": "Age_Group__Hypertension_Stroke_Rates",
+          "datasetName": "age_hypertension_heatmap"
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "77e41e94",
+      "displayName": "Population Description 1",
+      "layout": [
+        {
+          "widget": {
+            "name": "8d41afe9",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(total_patients)",
+                      "expression": "MEASURE(`total_patients`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Patients",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(total_patients)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "ab8f07ae",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(stroke_cases)",
+                      "expression": "MEASURE(`stroke_cases`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Stroke Cases",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(stroke_cases)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "ba032ca5",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(stroke_prevalence_pct)",
+                      "expression": "MEASURE(`stroke_prevalence_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Stroke Prevalence",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(stroke_prevalence_pct)",
+                  "rowNumber": 0,
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    }
+                  },
+                  "formatTemplate": "{{ @formatted }}%"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "9a27b503",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(median_age)",
+                      "expression": "MEASURE(`median_age`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Median Age",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(median_age)",
+                  "rowNumber": 0,
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "formatTemplate": "{{ @formatted }} years"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 7,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "ebaaebb8",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(missing_bmi_pct)",
+                      "expression": "MEASURE(`missing_bmi_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Missing BMI",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(missing_bmi_pct)",
+                  "rowNumber": 0,
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    }
+                  },
+                  "formatTemplate": "{{ @formatted }}%"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "984e3f70",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset__stroke",
+                      "expression": "`Untitled_dataset`.`stroke`"
+                    },
+                    {
+                      "name": "Untitled_dataset__age_group",
+                      "expression": "`Untitled_dataset`.`age_group`"
+                    },
+                    {
+                      "name": "sum(Untitled_dataset__patient_count)",
+                      "expression": "SUM(`Untitled_dataset`.`patient_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Patient Count by Age Group",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset__age_group",
+                  "displayName": "Age group",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(Untitled_dataset__patient_count)",
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Untitled_dataset__stroke",
+                  "displayName": "Outcome",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "c18f1bf9",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_1__category",
+                      "expression": "`Untitled_dataset_1`.`category`"
+                    },
+                    {
+                      "name": "Untitled_dataset_1__stroke_prevalence",
+                      "expression": "`Untitled_dataset_1`.`stroke_prevalence`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`Untitled_dataset_1`.`risk_factor` IN ('Sex')"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Sex",
+                "showTitle": false
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_1__category",
+                  "displayName": "Sex",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "Untitled_dataset_1__stroke_prevalence",
+                  "displayName": "Stroke prevalence (%)",
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "max": 20
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 3,
+            "width": 2,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "75abe3fd",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_1__category",
+                      "expression": "`Untitled_dataset_1`.`category`"
+                    },
+                    {
+                      "name": "Untitled_dataset_1__stroke_prevalence",
+                      "expression": "`Untitled_dataset_1`.`stroke_prevalence`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`Untitled_dataset_1`.`risk_factor` IN ('Hypertension')"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Hypertension",
+                "showTitle": false
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_1__category",
+                  "displayName": "Hypertension",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "Untitled_dataset_1__stroke_prevalence",
+                  "displayName": "Stroke prevalence (%)",
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "max": 20
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "width": 2,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "bf422765",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_1__category",
+                      "expression": "`Untitled_dataset_1`.`category`"
+                    },
+                    {
+                      "name": "Untitled_dataset_1__stroke_prevalence",
+                      "expression": "`Untitled_dataset_1`.`stroke_prevalence`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`Untitled_dataset_1`.`risk_factor` IN ('Heart disease')"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Heart Disease",
+                "showTitle": false
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_1__category",
+                  "displayName": "Heart disease",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "Untitled_dataset_1__stroke_prevalence",
+                  "displayName": "Stroke prevalence (%)",
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "max": 20
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 3,
+            "width": 2,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "a44121a8",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size:18px\">**Stroke Prevalence by Risk Factor**</span></span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "7807c28a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_2__stroke_status",
+                      "expression": "`Untitled_dataset_2`.`stroke_status`"
+                    },
+                    {
+                      "name": "Untitled_dataset_2__bmi",
+                      "expression": "`Untitled_dataset_2`.`bmi`"
+                    },
+                    {
+                      "name": "count(Untitled_dataset_2__bmi)",
+                      "expression": "COUNT(`Untitled_dataset_2`.`bmi`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "BMI Distribution by Stroke Status",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_2__bmi",
+                  "axis": {
+                    "title": "BMI"
+                  },
+                  "displayName": "BMI",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "count(Untitled_dataset_2__bmi)",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none"
+                  },
+                  "axis": {
+                    "title": "Count"
+                  },
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Untitled_dataset_2__stroke_status",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Outcome",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "319350b0",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_3__stroke_status",
+                      "expression": "`Untitled_dataset_3`.`stroke_status`"
+                    },
+                    {
+                      "name": "Untitled_dataset_3__glucose",
+                      "expression": "`Untitled_dataset_3`.`glucose`"
+                    },
+                    {
+                      "name": "count(Untitled_dataset_3__glucose)",
+                      "expression": "COUNT(`Untitled_dataset_3`.`glucose`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Glucose Distribution by Stroke Outcome",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_3__glucose",
+                  "axis": {
+                    "title": "Average Glucose Level"
+                  },
+                  "displayName": "Average Glucose Level",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "count(Untitled_dataset_3__glucose)",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none"
+                  },
+                  "axis": {
+                    "title": "Count"
+                  },
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Untitled_dataset_3__stroke_status",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Outcome",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "Stroke",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 2
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 7,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "912596cf",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__stroke_prevalence",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`stroke_prevalence`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__patient_count",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`patient_count`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__stroke_count",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`stroke_count`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__age_group",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`age_group`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__hypertension_status",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`hypertension_status`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Age & Hypertension",
+                "showTitle": true
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "Age_Group__Hypertension_Stroke_Rates__age_group",
+                  "displayName": "Age group",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "Age_Group__Hypertension_Stroke_Rates__hypertension_status",
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "displayName": "Hypertension Status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "Age_Group__Hypertension_Stroke_Rates__stroke_prevalence",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "Stroke Prevalence (%)",
+                  "scale": {
+                    "type": "quantitative",
+                    "colorRamp": {
+                      "mode": "custom-sequential",
+                      "colors": {
+                        "start": "#C8F0FA",
+                        "end": "#FFAB00"
+                      }
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                },
+                "extra": [
+                  {
+                    "fieldName": "Age_Group__Hypertension_Stroke_Rates__patient_count",
+                    "displayName": "Patient Count"
+                  },
+                  {
+                    "fieldName": "Age_Group__Hypertension_Stroke_Rates__stroke_count",
+                    "displayName": "Stroke Count"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 4
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "8a2984bf",
+      "displayName": "Population Description 2",
+      "layout": [
+        {
+          "widget": {
+            "name": "9066bf6b",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(total_patients)",
+                      "expression": "MEASURE(`total_patients`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Patients",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(total_patients)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "6f8194f8",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(stroke_cases)",
+                      "expression": "MEASURE(`stroke_cases`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Stroke Cases",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(stroke_cases)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "808aab5b",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "measure(Population_Overview__stroke_prevalence_pct)",
+                      "expression": "MEASURE(`Population_Overview`.`stroke_prevalence_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Stroke \nPrevalence",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Population_Overview__stroke_prevalence_pct)",
+                  "rowNumber": 0,
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    }
+                  },
+                  "formatTemplate": "{{ @formatted }}%",
+                  "style": {
+                    "fontSize": 28
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "2ffaf6de",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "population_overview",
+                  "fields": [
+                    {
+                      "name": "measure(median_age)",
+                      "expression": "MEASURE(`median_age`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Median Age",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(median_age)",
+                  "rowNumber": 0,
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "formatTemplate": "{{ @formatted }} years"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "3e1e4aa4",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "measure(Population_Overview__missing_bmi_pct)",
+                      "expression": "MEASURE(`Population_Overview`.`missing_bmi_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Missing BMI",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Population_Overview__missing_bmi_pct)",
+                  "rowNumber": 0,
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    }
+                  },
+                  "formatTemplate": "{{ @formatted }}%"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 10,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "557a9276",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset__stroke",
+                      "expression": "`Untitled_dataset`.`stroke`"
+                    },
+                    {
+                      "name": "Untitled_dataset__age_group",
+                      "expression": "`Untitled_dataset`.`age_group`"
+                    },
+                    {
+                      "name": "sum(Untitled_dataset__patient_count)",
+                      "expression": "SUM(`Untitled_dataset`.`patient_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Patient Count by Age Group",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset__age_group",
+                  "displayName": "Age group",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(Untitled_dataset__patient_count)",
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Untitled_dataset__stroke",
+                  "displayName": "Outcome",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "f4db0e88",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_1__category",
+                      "expression": "`Untitled_dataset_1`.`category`"
+                    },
+                    {
+                      "name": "max(Untitled_dataset_1__stroke_prevalence)",
+                      "expression": "MAX(`Untitled_dataset_1`.`stroke_prevalence`)"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`Untitled_dataset_1`.`risk_factor` IN ('Sex')"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Sex",
+                "showTitle": false
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_1__category",
+                  "axis": {
+                    "labelAngle": 0
+                  },
+                  "displayName": "Sex",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "max(Untitled_dataset_1__stroke_prevalence)",
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "displayName": "Stroke prevalence (%)",
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "max": 20
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "02addad5",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_1__category",
+                      "expression": "`Untitled_dataset_1`.`category`"
+                    },
+                    {
+                      "name": "max(Untitled_dataset_1__stroke_prevalence)",
+                      "expression": "MAX(`Untitled_dataset_1`.`stroke_prevalence`)"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`Untitled_dataset_1`.`risk_factor` IN ('Hypertension')"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Hypertension",
+                "showTitle": false
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_1__category",
+                  "displayName": "Hypertension",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "max(Untitled_dataset_1__stroke_prevalence)",
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "displayName": "Stroke prevalence (%)",
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "max": 20
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 4,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "432baa4c",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_1__category",
+                      "expression": "`Untitled_dataset_1`.`category`"
+                    },
+                    {
+                      "name": "max(Untitled_dataset_1__stroke_prevalence)",
+                      "expression": "MAX(`Untitled_dataset_1`.`stroke_prevalence`)"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`Untitled_dataset_1`.`risk_factor` IN ('Heart disease')"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Heart Disease",
+                "showTitle": false
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_1__category",
+                  "axis": {
+                    "title": "Heart Disease"
+                  },
+                  "displayName": "Heart disease",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "max(Untitled_dataset_1__stroke_prevalence)",
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "displayName": "Stroke prevalence (%)",
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "max": 20
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 4,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "991fa7a9",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size: 12px;\">**Stroke Prevalence by Risk Factor**</span></span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "5d71053a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_2__stroke_status",
+                      "expression": "`Untitled_dataset_2`.`stroke_status`"
+                    },
+                    {
+                      "name": "Untitled_dataset_2__bmi",
+                      "expression": "`Untitled_dataset_2`.`bmi`"
+                    },
+                    {
+                      "name": "count(Untitled_dataset_2__bmi)",
+                      "expression": "COUNT(`Untitled_dataset_2`.`bmi`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "BMI Distribution by Stroke Status",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_2__bmi",
+                  "axis": {
+                    "title": "BMI"
+                  },
+                  "displayName": "BMI",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "count(Untitled_dataset_2__bmi)",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none"
+                  },
+                  "axis": {
+                    "title": "Count"
+                  },
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Untitled_dataset_2__stroke_status",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Outcome",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 7,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "395602a3",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Untitled_dataset_3__stroke_status",
+                      "expression": "`Untitled_dataset_3`.`stroke_status`"
+                    },
+                    {
+                      "name": "Untitled_dataset_3__glucose",
+                      "expression": "`Untitled_dataset_3`.`glucose`"
+                    },
+                    {
+                      "name": "count(Untitled_dataset_3__glucose)",
+                      "expression": "COUNT(`Untitled_dataset_3`.`glucose`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Glucose Distribution by Stroke Outcome",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Untitled_dataset_3__glucose",
+                  "axis": {
+                    "title": "Average Glucose Level"
+                  },
+                  "displayName": "Average Glucose Level",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "count(Untitled_dataset_3__glucose)",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none"
+                  },
+                  "axis": {
+                    "title": "Count"
+                  },
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Untitled_dataset_3__stroke_status",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Outcome",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "Stroke",
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 2
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 7,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "b6e993b0",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__stroke_prevalence",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`stroke_prevalence`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__patient_count",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`patient_count`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__stroke_count",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`stroke_count`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__hypertension_status",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`hypertension_status`"
+                    },
+                    {
+                      "name": "Age_Group__Hypertension_Stroke_Rates__age_group",
+                      "expression": "`Age_Group__Hypertension_Stroke_Rates`.`age_group`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Stroke Prevalence by Age & Hypertension",
+                "showTitle": true
+              },
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "Age_Group__Hypertension_Stroke_Rates__hypertension_status",
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "displayName": "Hypertension Status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "Age_Group__Hypertension_Stroke_Rates__age_group",
+                  "displayName": "Age group",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "Age_Group__Hypertension_Stroke_Rates__stroke_prevalence",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "%",
+                  "scale": {
+                    "type": "quantitative",
+                    "colorRamp": {
+                      "mode": "custom-sequential",
+                      "colors": {
+                        "start": "#C8F0FA",
+                        "end": "#FFAB00"
+                      }
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                },
+                "extra": [
+                  {
+                    "fieldName": "Age_Group__Hypertension_Stroke_Rates__patient_count",
+                    "displayName": "Patient Count"
+                  },
+                  {
+                    "fieldName": "Age_Group__Hypertension_Stroke_Rates__stroke_count",
+                    "displayName": "Stroke Count"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 7,
+            "y": 7,
+            "width": 5,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
