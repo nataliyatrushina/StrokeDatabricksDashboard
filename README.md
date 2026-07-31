@@ -26,6 +26,7 @@ The workflow was updated to:
 - make the outputs available for visualisation in Databricks dashboards.
 
 The scikit-learn guide on [common pitfalls and recommended practices](https://scikit-learn.org/stable/common_pitfalls.html) helped identify areas for improvement, particularly around preprocessing pipelines and data leakage.
+
 ![Dashboard](dashboard.png)
 
 ## Tools
